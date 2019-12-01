@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,9 +7,8 @@ public class StickHeroController : MonoBehaviour
     [SerializeField] private StickHeroStick m_Stick;
     [SerializeField] private StickHeroPlayer m_Player;
     [SerializeField] private StickHeroPlatform[] m_Platforms;
-    //[SerializeField] private StickHeroController m_Controller;
 
-    private int counter; // platform counter
+    private int counter; //это счетчик платформ
 
     private enum EGameState
     {
@@ -18,12 +16,12 @@ public class StickHeroController : MonoBehaviour
         Scaling,
         Rotate,
         Movement,
-        Defeat,
+        Defeate
     }
 
     private EGameState currentGameState;
 
-    // Start is called before the first frame update
+    // Use this for initialization
     private void Start()
     {
         currentGameState = EGameState.Wait;
@@ -32,73 +30,80 @@ public class StickHeroController : MonoBehaviour
         m_Stick.ResetStick(m_Platforms[0].GetStickPosition());
     }
 
+
     // Update is called once per frame
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0)) 
+        if (!Input.GetMouseButtonDown(0)) return;
+        //нужна ли реакция на нажитие кнопки мыши
+        switch (currentGameState)
         {
-            return;
-        }
-
-        switch (currentGameState) 
-        {
+            //если не нажата кнопка старт
             case EGameState.Wait:
-                currentGameState = EGameState.Wait;
+                currentGameState = EGameState.Scaling;
                 m_Stick.StartScaling();
                 break;
+
+            //стик увеличивается - прерываем увеличением и запускаем поворот
             case EGameState.Scaling:
                 currentGameState = EGameState.Rotate;
                 m_Stick.StopScaling();
                 break;
+
+            //ничего не делать
             case EGameState.Rotate:
+                break;
+
+            //ничего не делать
             case EGameState.Movement:
                 break;
-            case EGameState.Defeat:
+
+            //перезапускаем игру
+            case EGameState.Defeate:
                 print("Game restarted");
-                int activeSceneIndex = SceneManager.GetActiveScene().buildIndex;
-                SceneManager.LoadScene(activeSceneIndex);
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
                 break;
+
             default:
-                break;
+                throw new ArgumentOutOfRangeException();
         }
     }
 
-    public void StopStickScale() 
+
+    public void StopStickScale()
     {
         currentGameState = EGameState.Rotate;
         m_Stick.StartRotate();
     }
 
-    public void StopStickRotate() 
+    public void StopStickRotate()
     {
         currentGameState = EGameState.Movement;
     }
 
-    public void StartPlayerMovement (float length)
+    public void StartPlayerMovement(float lenght)
     {
         currentGameState = EGameState.Movement;
         StickHeroPlatform nextPlatform = m_Platforms[counter + 1];
-
-        //find min stick length for moove
-        float targetLength = nextPlatform.transform.position.x - m_Stick.transform.position.x;
+        //находим минимальную длину стика для успешного перехода
+        float targetLenght = nextPlatform.transform.position.x - m_Stick.transform.position.x;
         float platformSize = nextPlatform.GetPlatformSize();
-        float min = targetLength - platformSize * 0.5f;
+        float min = targetLenght - platformSize * 0.5f;
+        min -= m_Player.transform.localScale.x * 0.9f;
 
-        min -= m_Player.transform.localScale.x;
+        //находим максимальную длину стика для успешного перехода
+        float max = targetLenght + platformSize * 0.5f;
 
-        // find max stick length
-        float max = targetLength + platformSize * 0.5f;
-
-        // movement next if ok else fall down
-        if (length > min && length < max)
+        //при успехе переходим в центр платформы, иначе падаем
+        if (lenght < min || lenght > max)
         {
-            m_Player.StartMovement(nextPlatform.transform.position.x, false);
+            float targetPosition = m_Stick.transform.position.x + lenght + m_Player.transform.localScale.x;
+            m_Player.StartMovement(targetPosition, true);
         }
         else
         {
-            float targetPosition = m_Stick.transform.position.x + length + m_Player.transform.localScale.x;
-
-            m_Player.StartMovement(targetPosition, true);
+            float targetPosition = nextPlatform.transform.position.x;
+            m_Player.StartMovement(targetPosition, false);
         }
     }
 
@@ -111,7 +116,7 @@ public class StickHeroController : MonoBehaviour
 
     public void ShowScores()
     {
-        currentGameState = EGameState.Defeat;
-        print($"Game Over {counter}");
+        currentGameState = EGameState.Defeate;
+        print("Game Over");
     }
 }
