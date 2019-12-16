@@ -32,14 +32,14 @@ public class FitInTheHole_Template : MonoBehaviour
         int rand = Random.Range(0, m_PositionVariants.Length);
         for (int i = 0; i < m_PositionVariants.Length; i++)
         {
+            m_PositionVariants[i].gameObject.SetActive(false);
+
             if (i == rand)
             {
-                m_PositionVariants[i].gameObject.SetActive(true);
+                //m_PositionVariants[i].gameObject.SetActive(true);
                 CurrentTarget = m_PositionVariants[i].transform;
                 continue;
             }
-
-            m_PositionVariants[i].gameObject.SetActive(false);
         }
     }
 
